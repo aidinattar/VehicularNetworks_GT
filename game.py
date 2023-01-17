@@ -67,7 +67,7 @@ class game(object):
 
 
         ## sample the probaility of succeeding attack ##
-        prob = np.exp(-self.L*t)
+        prob = np.exp(-self.L*t) / 2
 
         ######### obtain succeed or fail mask #########
         sample = random()
