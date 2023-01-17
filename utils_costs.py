@@ -28,8 +28,8 @@ utils_simple = {
 c = [1, 2]
 n_strategies = 3
 costs_exp = {
-    'row'   : np.fromiter((c[0] * 2 ** (2 * n) - 1 for n in range(n_strategies)), dtype=float),
-    'column': np.fromiter((c[1] * 2 ** (2 * n) - 1 for n in range(n_strategies)), dtype=float)
+    'row'   : np.fromiter((c[0] * (2 ** (2 * n) - 1) for n in range(n_strategies)), dtype=float),
+    'column': np.fromiter((c[1] * (2 ** (2 * n) - 1) for n in range(n_strategies)), dtype=float)
 }
 
 
@@ -90,6 +90,6 @@ prob_by_strategy_mod_4 = np.array([[0, np.inf, np.inf, np.inf],
 c = [1, 2]
 n_strategies = 4
 costs_exp_4 = {
-    'row'   : np.fromiter((c[0] * 2 ** (2 * n) - 1 for n in range(n_strategies)), dtype=float),
-    'column': np.fromiter((c[1] * 2 ** (2 * n) - 1 for n in range(n_strategies)), dtype=float)
+    'row'   : np.fromiter((c[0] * (2 ** (2 * n) - 1) for n in range(n_strategies)), dtype=float),
+    'column': np.fromiter((c[1] * (2 ** (2 * n) - 1) for n in range(n_strategies)), dtype=float)
 }
