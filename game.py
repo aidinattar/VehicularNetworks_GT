@@ -16,6 +16,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 from random import random
 from tqdm import tqdm
+import seaborn as sns
 
 np.random.seed(1)
 
@@ -67,7 +68,8 @@ class game(object):
 
 
         ## sample the probaility of succeeding attack ##
-        prob = np.exp(-self.L*t) / 2
+        #prob = np.exp(-self.L*t) / 2**(self.n_strategies - 2)
+        prob = np.exp(-self.L*t) / 2**(self.n_strategies - 2)
 
         ######### obtain succeed or fail mask #########
         sample = random()
@@ -89,19 +91,26 @@ class game(object):
         for i in range(self.n_steps):
 
             mygame = nash.Game(*self.get_payoffs(i))
-            tmp = np.stack(list(mygame.support_enumeration()))
-            if(tmp.shape[0] > 1):
-                if(self.debug):
-                    print(f'Got a degenerate game at iteration {i}')
-                degeneracies.append((i, mygame))
+            try:
+                tmp = np.stack(list(mygame.support_enumeration()))
+                if(tmp.shape[0] > 1):
+                    if(self.debug):
+                        print(f'Got a degenerate game at iteration {i}')
+                    degeneracies.append((i, mygame))
 
-            strategies[i, :, :] = tmp[0, :, :]
+                tmp = tmp.sum(axis=0)/tmp.shape[0]
 
-            payoffs[i,:] = mygame[tmp[0, :, :]]
+                strategies[i, :, :] = tmp[:, :]
+
+                payoffs[i,:] = mygame[tmp[:, :]]
+            except:
+                strategies[i] = np.nan
+                payoffs[i] = np.nan
 
         self.strategies = strategies
         self.payoffs    = payoffs
         self.degeneracies = degeneracies
+
 
 
     def plot_strategies_cum(self):
@@ -169,8 +178,13 @@ class population(game):
             payoffs.append(tmp.payoffs)
             degeneracies.append(tmp.degeneracies)
 
-        self.strategies   = np.stack(strategies)
-        self.payoffs      = np.stack(payoffs)
+        try:
+            self.strategies   = np.stack(strategies)
+            self.payoffs      = np.stack(payoffs)
+
+        except:
+            pass
+
         self.degeneracies = degeneracies
 
 
@@ -187,7 +201,7 @@ class population(game):
         '''
         Print the payoffs
         '''
-        print(f'Average payoffs:\n\trow: {self.payoffs.sum(axis=1).mean(axis=0)[0]} \n\tcolumn: {self.payoffs.sum(axis=1).mean(axis=0)[1]}')
+        print(f'Average payoffs:\n\trow: {np.nanmean(self.payoffs.sum(axis=1), axis=0)[0]} \n\tcolumn: {np.nanmean(self.payoffs.sum(axis=1), axis=0)[1]}')
 
     def print_degeneracies(self, n=10):
         '''
@@ -220,30 +234,107 @@ class population(game):
         for l, s in enumerate(eqs):
             print(f'Equilibrium {l}:', deg_game[s])
 
-    def plot_strategies(self):
+#    def plot_strategies(self):
+#        '''
+#        Plot the strategies of the population
+#        '''
+#
+#        # prob. density of strategies in function of game iteration based on population
+#        fig, axes = plt.subplots(1, 2, figsize=(8, 4), tight_layout=True, sharey=True)
+#        for i in range(2):
+#            axes[i].plot(np.array(range(self.n_steps)), np.nanmean(self.strategies[:, :, i, :], axis=0))
+#            #axes[i].legend([f"$\sigma_{0}$", f"$\sigma_{1}$", f"$\sigma_{2}$"])
+#            axes[i].legend([f"$\sigma_{j}$" for j in range(self.n_strategies)])
+#            axes[i].grid(axis='y', alpha=0.5)
+#            axes[i].set_title(f'Player {i+1}')
+#
+#        fig.suptitle('PDF of strategies')
+#        plt.show()
+
+    def plot_strategies(self, save=False):
         '''
         Plot the strategies of the population
         '''
-
+        sns.set(style="darkgrid")
         # prob. density of strategies in function of game iteration based on population
         fig, axes = plt.subplots(1, 2, figsize=(8, 4), tight_layout=True, sharey=True)
         for i in range(2):
-            axes[i].plot(np.array(range(self.n_steps)), self.strategies[:, :, i, :].mean(axis=0))
+            for j in range(self.n_strategies):
+                color = sns.color_palette("husl", self.n_strategies)[j]
+                mean = np.nanmean(self.strategies[:, :, i, j], axis=0)
+                std = np.nanstd(self.strategies[:, :, i, j], axis=0)
+                axes[i].fill_between(np.array(range(self.n_steps)), mean-std, mean+std, color=color,alpha=0.2)
+                axes[i].plot(np.array(range(self.n_steps)), mean, label=f"$\sigma_{j}$", linewidth=1.5, color=color)
+            axes[i].legend()
+            axes[i].grid(axis='y', alpha=0.5)
+            axes[i].set_title(f'Player {i+1}')
+            axes[i].set_xlabel("Game iteration")
+            axes[i].set_ylabel("Probability Density")
+
+        fig.suptitle('PDF of strategies')
+        plt.show()
+
+        if save:
+            fig.savefig(f'strategies_{self.n_strategies}.pdf')
+
+
+#    def plot_payoffs(self):
+#        '''
+#        Plot the payoffs of the population
+#        '''
+#
+#        # evolution of payoff as a function of number of played matches
+#        plt.plot(np.array(range(self.n_steps)), np.nanmean(self.payoffs.cumsum(axis=1), axis=0))
+#        plt.legend(["Player 1", "Player2"])
+#        plt.show()
+
+    def plot_payoffs(self, save=False):
+        '''
+        Plot the payoffs of the population
+        '''
+        sns.set(style="darkgrid")
+        # evolution of payoff as a function of number of played matches
+        fig, ax = plt.subplots(figsize=(8, 4), tight_layout=True)
+        for i in range(2):
+            mean = np.nanmean(self.payoffs[:,:, i].cumsum(axis=1), axis=0)
+            std = np.nanstd(self.payoffs[:,:, i].cumsum(axis=1), axis=0)
+            color = sns.color_palette("husl", 2)[i]
+            ax.fill_between(np.array(range(self.n_steps)), mean-std, mean+std, color=color,alpha=0.2)
+            ax.plot(np.array(range(self.n_steps)), mean, label=f"Player {i+1}", linewidth=1.5, color=color)
+        ax.legend()
+        ax.grid(axis='y', alpha=0.5)
+        ax.set_xlabel("Game iteration")
+        ax.set_ylabel("Cumulative payoff")
+
+        fig.suptitle('Evolution of payoffs')
+        plt.show()
+
+        if save:
+            fig.savefig(f'payoffs_{self.n_strategies}.pdf')
+
+
+    def plot_standard_deviation_payoffs(self):
+        '''
+        Plot the standard deviation of the payoffs of the population
+        '''
+
+        # evolution of payoff as a function of number of played matches
+        plt.plot(np.array(range(self.n_steps)), self.payoffs.cumsum(axis=1).std(axis=0))
+        plt.legend(["Player 1", "Player2"])
+        plt.show()
+
+    def plot_standard_deviation_strategies(self):
+        '''
+        Plot the standard deviation of the strategies of the population
+        '''
+
+        fig, axes = plt.subplots(1, 2, figsize=(8, 4), tight_layout=True, sharey=True)
+        for i in range(2):
+            axes[i].plot(np.array(range(self.n_steps)), self.strategies[:, :, i, :].std(axis=0))
             #axes[i].legend([f"$\sigma_{0}$", f"$\sigma_{1}$", f"$\sigma_{2}$"])
             axes[i].legend([f"$\sigma_{j}$" for j in range(self.n_strategies)])
             axes[i].grid(axis='y', alpha=0.5)
             axes[i].set_title(f'Player {i+1}')
 
-        fig.suptitle('PDF of strategies')
-        plt.show()
-
-
-    def plot_payoffs(self):
-        '''
-        Plot the payoffs of the population
-        '''
-
-        # evolution of payoff as a function of number of played matches
-        plt.plot(np.array(range(self.n_steps)), self.payoffs.cumsum(axis=1).mean(axis=0))
-        plt.legend(["Player 1", "Player2"])
+        fig.suptitle('STD of strategies')
         plt.show()
