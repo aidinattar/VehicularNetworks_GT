@@ -1,0 +1,7 @@
+# VehicularNetworks_GT
+Projects of the course of Vision and Cognitive Systems of the Master Degree in Physics of Data of the University of Padua.
+
+### Abstract
+Game theory is a powerful tool for analyzing the interactions between different entities in a network, and it has recently been applied to the field of vehicular network security. In this paper, we propose a game-theoretic approach to analyze the cybersecurity of vehicular networks (VANETs). Our approach models the strategic decision-making of vehicles and attackers in the VANET as a non-cooperative game, and uses this model to analyze the security of the network. We show that game theory can be used to analyze the effectiveness of different security mechanisms and identify vulnerabilities in the network. Furthermore, we propose a game-theoretic modeling of the VANET learning process to improve its defense mechanism. By considering the actions and reactions of both vehicles and attackers, our approach allows for a more comprehensive analysis of the network's security.
+Our proposed model is validated through simulations and experiments. The results show that our proposed models and solutions can effectively improve the security of VANETs. For example, our approach can identify the optimal security mechanisms for different scenarios. %and determine the most vulnerable points in the network. 
+Additionally, our game-theoretic modeling of the VANET learning process can improve the network's defense mechanism by allowing it to adapt to changing attack patterns.
